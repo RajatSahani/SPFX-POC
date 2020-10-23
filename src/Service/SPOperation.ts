@@ -1,7 +1,8 @@
 
 
 import { sp } from '@pnp/sp/presets/all'
-import { concatStyleSets } from 'office-ui-fabric-react';
+import { IChoiceGroupOption, IDropdownOption } from 'office-ui-fabric-react';
+
 
 
 // ...
@@ -10,6 +11,9 @@ export interface IListItem {
     Name: string; 
     Address: string; 
     MobileNumber: string;
+    Gendor:string,
+    CityId:number,
+    City:string
   } 
   
 
@@ -40,8 +44,8 @@ export class SPOperation {
 
         let ListItem: any[] = [];
         return new Promise<any[]>(async (reslove, reject) => {
-            sp.web.lists.getByTitle(listname).items.getAll().then((result: any) => {
-                result.map((result: any) => (ListItem.push({ ID: result.ID, Name: result.Name, Address: result.Address, MobileNumber: result.MobileNumber, Action: "" })))
+            sp.web.lists.getByTitle(listname).items.select("ID","Name","Address","MobileNumber","Gendor","City/Title", "City/ID").expand("City").get().then((result: any) => {
+                result.map((result: any) => (ListItem.push({ ID: result.ID, Name: result.Name, Address: result.Address, MobileNumber: result.MobileNumber,Gendor:result.Gendor,City:result.City.Title, CityID:result.City.Id,Action: "" })))
             })
             reslove(ListItem);
         }
@@ -61,6 +65,39 @@ export class SPOperation {
 
     }
     /**
+     * GetAllCity
+listname:string :Id    */
+    public GetAllCity(listname:string):Promise<IDropdownOption[]> {
+        var items: IDropdownOption[]=[];
+        return new Promise<IDropdownOption[]>(
+            async(resolve,reject)=>{
+                sp.web.lists.getByTitle("City").items.getAll().then((result:any)=>{
+                    result.map((result:any)=>{
+                        items.push({key:result.ID, text:result.Title })
+                    })
+                })
+                resolve(items);
+            }
+        )
+    }
+    // /**
+    //  * GetGendor
+    //  */
+    // public GetGendor():Promise<IChoiceGroupOption[]> {
+    //     var items: IChoiceGroupOption[]=[];
+    //     return new Promise<IChoiceGroupOption[]>(
+    //         async(resolve,reject)=>{
+    //             items=[  
+    //                 { key: "Male", text: "Male" },  
+    //                 { key: "Female", text: "Female" },  
+    //                 { key: "Others", text: "Others" }  
+    //             ];  
+    //             resolve(items);
+    //         }
+    //     )
+        
+    // }
+    /**
      * GetItemByID
      */
     public GetItemByID(listname: string, ID: number): Promise<any> {
@@ -68,9 +105,9 @@ export class SPOperation {
         let ListItem={} as IListItem;
         return new Promise<any>(
             async (resolve, reject) => {
-                let result: any = await  sp.web.lists.getByTitle(listname).items.getById(ID).get();
+                let result: any = await  sp.web.lists.getByTitle(listname).items.getById(ID).select("ID","Name","Address","MobileNumber","Gendor","City/Title", "City/ID").expand("City").get();
                  console.log(result);
-                 ListItem={ ID: result.ID, Name: result.Name, Address: result.Address, MobileNumber: result.MobileNumber} as IListItem
+                 ListItem={ ID: result.ID, Name: result.Name, Address: result.Address, MobileNumber: result.MobileNumber,Gendor:result.Gendor,City:result.City.Title,CityId:result.City.ID} as IListItem
                 resolve(ListItem);
             }
         );
@@ -82,7 +119,7 @@ export class SPOperation {
     public updateItemByID(listname:string,ID:number, Item:any):Promise<string> {
         return new Promise<string>(async(resolve,reject)=>{
             sp.web.lists.getByTitle(listname).items.getById(ID).update(Item).then((result)=>{
-                resolve(`Item With ID ${ID}`)
+                resolve(`Item With ID ${ID} Update Successfully`)
             })
         })
         
